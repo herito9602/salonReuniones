@@ -1,0 +1,42 @@
+spring:
+  application:
+    name: meeting-rooms
+  datasource:
+    # In-memory H2 by default so the project runs with zero setup.
+    # Use the "postgres" profile for a real database (see README).
+    url: jdbc:h2:mem:meetingrooms;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    username: sa
+    password:
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+server:
+  error:
+    include-stacktrace: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+---
+spring:
+  config:
+    activate:
+      on-profile: postgres
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/meetingrooms}
+    username: ${DB_USERNAME:meetingrooms}
+    password: ${DB_PASSWORD:meetingrooms}
