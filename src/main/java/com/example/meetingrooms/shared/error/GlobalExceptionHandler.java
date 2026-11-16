@@ -81,6 +81,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return validationProblem(List.of(new FieldViolation(ex.getName(), message)));
     }
 
+    /**
+     * Catch-all so unexpected failures keep the problem-detail shape without leaking internals.
+     */
+    @ExceptionHandler(Exception.class)
+    public ProblemDetail handleUnexpected(Exception ex) {
+        log.error("Unexpected error", ex);
+        return problem(HttpStatus.INTERNAL_SERVER_ERROR, "Internal error",
+                "An unexpected error occurred. Please try again later.");
+    }
+
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(
             @NonNull MethodArgumentNotValidException ex, @NonNull HttpHeaders headers,
