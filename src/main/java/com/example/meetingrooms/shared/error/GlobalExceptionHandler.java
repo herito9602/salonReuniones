@@ -4,6 +4,7 @@ import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -66,6 +67,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .sorted(Comparator.comparing(FieldViolation::field))
                 .toList();
         return validationProblem(errors);
+    }
+
+    @ExceptionHandler(PropertyReferenceException.class)
+    public ProblemDetail handleUnknownSortProperty(PropertyReferenceException ex) {
+        String message = "cannot sort by '%s'".formatted(ex.getPropertyName());
+        return validationProblem(List.of(new FieldViolation("sort", message)));
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)

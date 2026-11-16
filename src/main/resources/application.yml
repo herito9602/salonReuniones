@@ -7,6 +7,10 @@ spring:
     url: jdbc:h2:mem:meetingrooms;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
     username: sa
     password:
+  data:
+    web:
+      pageable:
+        max-page-size: 100
   jpa:
     open-in-view: false
     hibernate:
