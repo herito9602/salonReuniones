@@ -122,23 +122,22 @@ Todos los errores usan el formato estándar [RFC 9457 Problem Details](https://w
 
 ## Uso de IA
 
-Usé Claude Code (Claude Opus) como asistente de desarrollo durante toda la prueba.
+Usé Claude Code (agente de IA) para desarrollar casi toda la implementación. Mi rol fue dirigir el trabajo y verificar el resultado.
 
 **Qué le pedí**
-- Construir la API siguiendo el enunciado, con buenas prácticas y commits por unidad de trabajo (cada commit compila y pasa sus tests).
-- Proponer el modelo de dominio, la estrategia de concurrencia y el formato de errores.
-- Escribir tests unitarios y de integración, y este README.
+- Construir la API según el enunciado, con buenas prácticas y commits incrementales por unidad de trabajo.
+- Explicarme cada decisión técnica y el problema que resuelve.
 
 **Qué acepté**
-- La estructura por funcionalidad, el value object `TimeSlot` con intervalos semiabiertos y el bloqueo pesimista sobre la sala.
-- Problem Details (RFC 9457) como formato único de error, incluido el `401`.
-- La cancelación como cambio de estado en vez de borrado.
+- La estructura por funcionalidad, el bloqueo pesimista sobre la sala, los intervalos semiabiertos `[start, end)` y la cancelación como cambio de estado. Antes de aceptarlas pedí que me explicara qué problema resolvía cada una.
 
-**Qué corregí o ajusté durante el proceso**
-- El entorno tenía Java 8 por defecto: se forzó el JDK 17 para compilar y se añadió el Maven wrapper para no depender de la máquina.
-- Los tests de integración se llamaban `*IT` y Surefire no los ejecutaba (en verde sin correrlos). Se renombraron a `*IntegrationTest` y se verificó el número de tests ejecutados.
-- `mvnw` se guardaba con fin de línea CRLF y no funcionaría en Linux/macOS: se añadió `.gitattributes`.
-- Ordenar por una propiedad inexistente (`sort=password`) devolvía `500`: se mapeó a `400` con un test que lo cubre.
-- Se descartó una restricción `EXCLUDE` de PostgreSQL sin poder probarla, para no entregar código no verificado; queda documentada arriba.
-- Antes de cerrar pedí una revisión independiente (un agente con contexto limpio, sin ver la conversación). De ahí salieron: el test de concurrencia real (los tests `@Transactional` nunca ejercitaban el lock), `@Version` para cancelaciones simultáneas, el handler de `500` en formato Problem Details y la zona horaria configurable. Descarté o dejé como trabajo futuro lo que no aportaba en este alcance (duración máxima, endurecer Swagger).
-- El test de concurrencia se validó "rompiendo" el código a propósito (quitando el lock): falló con 8 reservas en lugar de 1, lo que confirma que el test protege la decisión y no solo el caso feliz.
+**Qué corregí o exigí**
+- Commits y pushes por etapas en lugar de una única entrega al final.
+- Usar mi identidad personal de git en todos los commits.
+- Ver la aplicación funcionando en vivo (Swagger y una demo de respuestas `201`, `400`, `401` y `409`) además de los tests.
+
+**Cómo se verificó la calidad**
+- Durante el desarrollo el propio agente detectó y corrigió errores: tests de integración que Maven no ejecutaba (nombres `*IT`), finales de línea CRLF que rompían `mvnw` en Linux y un `500` al ordenar por un campo inexistente.
+- Pedí una revisión independiente con un agente de contexto limpio. De ella salieron el test de concurrencia real (validado quitando el bloqueo a propósito: sin él se creaban 8 reservas en lugar de 1), `@Version` para cancelaciones simultáneas, el `500` en formato Problem Details y la zona horaria configurable.
+
+Mi siguiente paso es estudiar el código a fondo para poder defender y modificar cada decisión por mi cuenta.
