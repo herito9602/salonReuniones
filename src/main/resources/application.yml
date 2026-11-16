@@ -22,6 +22,8 @@ spring:
       write-dates-as-timestamps: false
 
 app:
+  # Office time zone used to decide what "now" is (e.g. Europe/Madrid). Empty = server default.
+  time-zone: ${APP_TIME_ZONE:}
   security:
     user:
       # Development defaults only: override with APP_USERNAME / APP_PASSWORD.
