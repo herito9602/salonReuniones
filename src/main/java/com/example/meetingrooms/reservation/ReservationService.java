@@ -7,7 +7,6 @@ import com.example.meetingrooms.shared.error.InvalidRequestException;
 import com.example.meetingrooms.shared.error.NotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -65,7 +64,7 @@ public class ReservationService {
     }
 
     @Transactional(readOnly = true)
-    public Page<Reservation> search(Pageable pageable) {
-        return reservationRepository.findAll(Specification.unrestricted(), pageable);
+    public Page<Reservation> search(ReservationFilter filter, Pageable pageable) {
+        return reservationRepository.findAll(ReservationSpecifications.matching(filter), pageable);
     }
 }

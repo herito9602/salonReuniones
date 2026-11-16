@@ -131,8 +131,69 @@ class ReservationControllerIntegrationTest {
         JsonNode page = objectMapper.readTree(body);
 
         assertThat(page.get("content")).hasSize(1);
-        assertThat(page.get("totalElements").asLong()).isGreaterThanOrEqualTo(2);
+        assertThat(page.get("totalElements").asLong()).isEqualTo(2);
+        assertThat(page.get("totalPages").asInt()).isEqualTo(2);
         assertThat(page.get("size").asInt()).isEqualTo(1);
+    }
+
+    @Test
+    void filtersByRoomAndDate() throws Exception {
+        long andromeda = roomId;
+        book("2099-03-10T10:00:00", "2099-03-10T11:00:00");
+        book("2099-03-11T10:00:00", "2099-03-11T11:00:00");
+        roomId = createRoom("Pegasus");
+        book("2099-03-10T10:00:00", "2099-03-10T11:00:00");
+
+        mockMvc.perform(get("/api/v1/reservations")
+                        .param("roomId", String.valueOf(andromeda))
+                        .param("date", "2099-03-10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].roomName").value("Andromeda"))
+                .andExpect(jsonPath("$.content[0].start").value("2099-03-10T10:00:00"));
+
+        mockMvc.perform(get("/api/v1/reservations").param("date", "2099-03-10"))
+                .andExpect(jsonPath("$.totalElements").value(2));
+
+        mockMvc.perform(get("/api/v1/reservations").param("roomId", String.valueOf(andromeda)))
+                .andExpect(jsonPath("$.totalElements").value(2))
+                .andExpect(jsonPath("$.content[0].start").value("2099-03-10T10:00:00"));
+    }
+
+    @Test
+    void dateFilterIncludesReservationsSpanningMidnight() throws Exception {
+        book("2099-03-10T23:00:00", "2099-03-11T01:00:00");
+
+        mockMvc.perform(get("/api/v1/reservations").param("date", "2099-03-10"))
+                .andExpect(jsonPath("$.totalElements").value(1));
+        mockMvc.perform(get("/api/v1/reservations").param("date", "2099-03-11"))
+                .andExpect(jsonPath("$.totalElements").value(1));
+        mockMvc.perform(get("/api/v1/reservations").param("date", "2099-03-12"))
+                .andExpect(jsonPath("$.totalElements").value(0));
+    }
+
+    @Test
+    void rejectsInvalidFilters() throws Exception {
+        mockMvc.perform(get("/api/v1/reservations").param("date", "10/03/2099"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0].field").value("date"));
+
+        mockMvc.perform(get("/api/v1/reservations").param("roomId", "-1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0].field").value("roomId"));
+
+        mockMvc.perform(get("/api/v1/reservations").param("sort", "password"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0].field").value("sort"));
+    }
+
+    private long createRoom(String name) throws Exception {
+        String body = mockMvc.perform(post("/api/v1/rooms").with(httpBasic(USERNAME, PASSWORD))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"%s\",\"capacity\":6}".formatted(name)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        return objectMapper.readTree(body).get("id").asLong();
     }
 
     private ResultActions book(String start, String end) throws Exception {

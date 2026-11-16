@@ -4,8 +4,13 @@ import com.example.meetingrooms.reservation.dto.CreateReservationRequest;
 import com.example.meetingrooms.reservation.dto.ReservationResponse;
 import com.example.meetingrooms.shared.web.PageResponse;
 import com.example.meetingrooms.shared.web.OpenApiConfig;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -19,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/v1/reservations")
@@ -40,10 +46,22 @@ public class ReservationController {
         return ResponseEntity.created(location).body(ReservationResponse.from(reservation));
     }
 
+    /**
+     * Paginated search. {@code date} returns reservations overlapping that day; filters combine with AND.
+     * Supports {@code page}, {@code size} (max 100) and {@code sort} (e.g. {@code sort=startTime,desc}).
+     */
     @GetMapping
     public PageResponse<ReservationResponse> list(
+            @Parameter(description = "Only reservations of this room")
+            @RequestParam(required = false) @Positive(message = "roomId must be a positive number") Long roomId,
+            @Parameter(description = "Only reservations overlapping this day (ISO date, e.g. 2030-01-15)")
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @Parameter(description = "Only reservations with this status")
+            @RequestParam(required = false) ReservationStatus status,
+            @ParameterObject
             @PageableDefault(size = 20, sort = "startTime", direction = Sort.Direction.ASC) Pageable pageable) {
-        return PageResponse.from(reservationService.search(pageable), ReservationResponse::from);
+        ReservationFilter filter = new ReservationFilter(roomId, date, status);
+        return PageResponse.from(reservationService.search(filter, pageable), ReservationResponse::from);
     }
 
     @GetMapping("/{id}")
