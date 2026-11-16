@@ -11,8 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -23,6 +22,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @Transactional
 class RoomControllerIntegrationTest {
+
+    private static final String USERNAME = "admin";
+    private static final String PASSWORD = "admin123";
 
     @Autowired
     private MockMvc mockMvc;
@@ -36,7 +38,7 @@ class RoomControllerIntegrationTest {
                 .andExpect(jsonPath("$.name").value("Orion"))
                 .andExpect(jsonPath("$.capacity").value(8));
 
-        mockMvc.perform(get("/api/v1/rooms").with(user("reader")))
+        mockMvc.perform(get("/api/v1/rooms"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].name").value("Orion"));
@@ -61,13 +63,13 @@ class RoomControllerIntegrationTest {
 
     @Test
     void returnsNotFoundForUnknownRoom() throws Exception {
-        mockMvc.perform(get("/api/v1/rooms/999999").with(user("reader")))
+        mockMvc.perform(get("/api/v1/rooms/999999"))
                 .andExpect(status().isNotFound());
     }
 
     private static MockHttpServletRequestBuilder createRoom(String body) {
         return post("/api/v1/rooms")
-                .with(user("admin")).with(csrf())
+                .with(httpBasic(USERNAME, PASSWORD))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body);
     }

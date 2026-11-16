@@ -2,6 +2,8 @@ package com.example.meetingrooms.room;
 
 import com.example.meetingrooms.room.dto.CreateRoomRequest;
 import com.example.meetingrooms.room.dto.RoomResponse;
+import com.example.meetingrooms.shared.web.OpenApiConfig;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,6 +27,7 @@ public class RoomController {
         this.roomService = roomService;
     }
 
+    @SecurityRequirement(name = OpenApiConfig.BASIC_AUTH)
     @PostMapping
     public ResponseEntity<RoomResponse> create(@Valid @RequestBody CreateRoomRequest request) {
         Room room = roomService.create(request.name(), request.capacity());

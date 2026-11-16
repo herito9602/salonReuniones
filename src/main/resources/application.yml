@@ -21,6 +21,13 @@ spring:
     serialization:
       write-dates-as-timestamps: false
 
+app:
+  security:
+    user:
+      # Development defaults only: override with APP_USERNAME / APP_PASSWORD.
+      username: ${APP_USERNAME:admin}
+      password: ${APP_PASSWORD:admin123}
+
 server:
   error:
     include-stacktrace: never

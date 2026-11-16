@@ -14,8 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -26,6 +25,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 class ReservationControllerIntegrationTest {
 
+    private static final String USERNAME = "admin";
+    private static final String PASSWORD = "admin123";
+
     @Autowired
     private MockMvc mockMvc;
     @Autowired
@@ -35,7 +37,7 @@ class ReservationControllerIntegrationTest {
 
     @BeforeEach
     void createRoom() throws Exception {
-        String body = mockMvc.perform(post("/api/v1/rooms").with(user("admin")).with(csrf())
+        String body = mockMvc.perform(post("/api/v1/rooms").with(httpBasic(USERNAME, PASSWORD))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"Andromeda\",\"capacity\":10}"))
                 .andExpect(status().isCreated())
@@ -77,12 +79,12 @@ class ReservationControllerIntegrationTest {
                 .andReturn().getResponse().getContentAsString();
         long reservationId = objectMapper.readTree(body).get("id").asLong();
 
-        mockMvc.perform(post("/api/v1/reservations/{id}/cancel", reservationId).with(user("admin")).with(csrf()))
+        mockMvc.perform(post("/api/v1/reservations/{id}/cancel", reservationId).with(httpBasic(USERNAME, PASSWORD)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("CANCELLED"))
                 .andExpect(jsonPath("$.cancelledAt").isNotEmpty());
 
-        mockMvc.perform(post("/api/v1/reservations/{id}/cancel", reservationId).with(user("admin")).with(csrf()))
+        mockMvc.perform(post("/api/v1/reservations/{id}/cancel", reservationId).with(httpBasic(USERNAME, PASSWORD)))
                 .andExpect(status().isConflict());
 
         book("2099-03-10T10:00:00", "2099-03-10T11:00:00").andExpect(status().isCreated());
@@ -90,7 +92,7 @@ class ReservationControllerIntegrationTest {
 
     @Test
     void rejectsMissingFieldsWithClearErrors() throws Exception {
-        mockMvc.perform(post("/api/v1/reservations").with(user("admin")).with(csrf())
+        mockMvc.perform(post("/api/v1/reservations").with(httpBasic(USERNAME, PASSWORD))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"responsible\":\"\"}"))
                 .andExpect(status().isBadRequest())
@@ -123,7 +125,7 @@ class ReservationControllerIntegrationTest {
         book("2099-03-10T10:00:00", "2099-03-10T11:00:00");
         book("2099-03-10T12:00:00", "2099-03-10T13:00:00");
 
-        String body = mockMvc.perform(get("/api/v1/reservations").param("size", "1").with(user("reader")))
+        String body = mockMvc.perform(get("/api/v1/reservations").param("size", "1"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
         JsonNode page = objectMapper.readTree(body);
@@ -137,7 +139,7 @@ class ReservationControllerIntegrationTest {
         String json = """
                 {"roomId": %d, "responsible": "Grace Hopper", "start": "%s", "end": "%s"}
                 """.formatted(roomId, start, end);
-        return mockMvc.perform(post("/api/v1/reservations").with(user("admin")).with(csrf())
+        return mockMvc.perform(post("/api/v1/reservations").with(httpBasic(USERNAME, PASSWORD))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json));
     }

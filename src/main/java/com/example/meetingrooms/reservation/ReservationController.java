@@ -3,6 +3,8 @@ package com.example.meetingrooms.reservation;
 import com.example.meetingrooms.reservation.dto.CreateReservationRequest;
 import com.example.meetingrooms.reservation.dto.ReservationResponse;
 import com.example.meetingrooms.shared.web.PageResponse;
+import com.example.meetingrooms.shared.web.OpenApiConfig;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -28,6 +30,7 @@ public class ReservationController {
         this.reservationService = reservationService;
     }
 
+    @SecurityRequirement(name = OpenApiConfig.BASIC_AUTH)
     @PostMapping
     public ResponseEntity<ReservationResponse> create(@Valid @RequestBody CreateReservationRequest request) {
         Reservation reservation = reservationService.create(
@@ -52,6 +55,7 @@ public class ReservationController {
      * Cancellation is modelled as an action rather than a DELETE because the reservation is
      * kept (status CANCELLED) for history; the slot is released for new bookings.
      */
+    @SecurityRequirement(name = OpenApiConfig.BASIC_AUTH)
     @PostMapping("/{id}/cancel")
     public ReservationResponse cancel(@PathVariable Long id) {
         return ReservationResponse.from(reservationService.cancel(id));
