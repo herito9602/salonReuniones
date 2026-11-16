@@ -13,6 +13,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 
 import java.time.LocalDateTime;
 
@@ -50,6 +51,9 @@ public class Reservation {
 
     @Column(name = "cancelled_at")
     private LocalDateTime cancelledAt;
+
+    @Version
+    private long version;
 
     protected Reservation() {
         // required by JPA

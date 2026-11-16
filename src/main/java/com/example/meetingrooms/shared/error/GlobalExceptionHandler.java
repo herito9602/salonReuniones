@@ -12,6 +12,7 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.lang.NonNull;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -51,6 +52,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         // Last line of defense: a DB constraint caught something the service checks missed (e.g. a race).
         log.warn("Data integrity violation", ex);
         return problem(HttpStatus.CONFLICT, "Conflict", "The request conflicts with the current state of the resource");
+    }
+
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ProblemDetail handleConcurrentModification(ObjectOptimisticLockingFailureException ex) {
+        return problem(HttpStatus.CONFLICT, "Conflict",
+                "The resource was modified by another request. Reload it and try again.");
     }
 
     @ExceptionHandler(InvalidRequestException.class)
